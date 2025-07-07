@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
-import BotAvatar from './BotAvatar' // 👈 ADD THIS
+import BotAvatar from './BotAvatar'
 
 const Chatbot = () => {
   const [open, setOpen] = useState(false)
@@ -28,15 +28,25 @@ const Chatbot = () => {
     setError(false)
 
     try {
-      const res = await fetch('http://localhost:3001/chat', {
+      const response = await fetch("https://dhigin-ai-portfolio.onrender.com/chat", {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: input }),
       })
-      const data = await res.json()
-      setMessages((prev) => [...prev, { sender: 'bot', text: data.reply || 'No reply.' }])
+
+      const data = await response.json() // ✅ fixed here
+      console.log("🌐 Gemini RAG Server replied:", data)
+
+      setMessages((prev) => [...prev, {
+        sender: 'bot',
+        text: data.reply || '🤖 Gemini didn’t reply anything.'
+      }])
     } catch (err) {
-      setMessages((prev) => [...prev, { sender: 'bot', text: '❌ Gemini API error.' }])
+      console.error("❌ Gemini API error in frontend:", err)
+      setMessages((prev) => [...prev, {
+        sender: 'bot',
+        text: '❌ Gemini API error.'
+      }])
       setError(true)
     } finally {
       setLoading(false)
@@ -83,7 +93,6 @@ const Chatbot = () => {
                         ? 'bg-purple-700 text-white'
                         : 'bg-zinc-800 text-purple-300'
                     }`}
-                    style={{ whiteSpace: 'pre-wrap' }}
                   >
                     {m.text}
                   </span>
