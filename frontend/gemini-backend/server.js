@@ -6,12 +6,12 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 dotenv.config()
 
 const app = express()
-app.use(cors()) 
+app.use(cors()) // For production, restrict: cors({ origin: 'https://yourdomain.com' })
 app.use(express.json())
 
 // Load API Key and model from .env
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY
-const GEMINI_MODEL = process.env.GEMINI_MODEL 
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-pro'
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY)
 const model = genAI.getGenerativeModel({ model: GEMINI_MODEL })
