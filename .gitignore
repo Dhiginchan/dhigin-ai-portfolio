@@ -1,0 +1,14 @@
+# Ignore node_modules
+node_modules/
+
+# Ignore dotenv secrets
+.env
+
+# Ignore build folders
+dist/
+build/
+
+# OS and IDE crap
+.DS_Store
+.vscode/
+Thumbs.db

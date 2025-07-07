@@ -1,0 +1,23 @@
+{
+  "name": "gemini-backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "cors": "^2.8.5",
+    "cosine-similarity": "^1.0.1",
+    "dotenv": "^17.0.1",
+    "express": "^5.1.0",
+    "fs": "^0.0.1-security",
+    "lodash": "^4.17.21",
+    "lucide-react": "^0.525.0"
+  },
+  "description": ""
+}
