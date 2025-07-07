@@ -4,25 +4,42 @@ import dotenv from 'dotenv'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
 dotenv.config()
+
 const app = express()
-app.use(cors())
+app.use(cors()) 
 app.use(express.json())
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+// Load API Key and model from .env
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY
+const GEMINI_MODEL = process.env.GEMINI_MODEL 
+
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY)
+const model = genAI.getGenerativeModel({ model: GEMINI_MODEL })
 
 app.post('/chat', async (req, res) => {
   try {
     const { message } = req.body
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' })
+
+    if (!message || message.trim() === '') {
+      return res.status(400).json({ error: 'Message is required.' })
+    }
+
+    console.log(`📨 User Message: "${message}"`)
+
     const result = await model.generateContent(message)
-    const response = result.response.text()
-    console.log("Gemini said:", response)
-    res.json({ reply: response })
+    const reply = result?.response?.text?.() || '🤖 Gemini had no reply.'
+
+    console.log(`🤖 Gemini Reply: "${reply}"`)
+    res.json({ reply })
+
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    console.error('❌ Gemini API Error:', err.message)
+    res.status(500).json({ error: 'Gemini API failed. Please try again later.' })
   }
 })
 
-app.listen(3001, () => {
-  console.log('⚡ Gemini backend running on http://localhost:3001')
+// Start the server
+const PORT = process.env.PORT || 3001
+app.listen(PORT, () => {
+  console.log(`⚡ Gemini backend running on http://localhost:${PORT}`)
 })
