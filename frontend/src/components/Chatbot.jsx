@@ -11,6 +11,8 @@ const Chatbot = () => {
   const [error, setError] = useState(false)
   const chatRef = useRef()
 
+  const BACKEND_URL = 'https://dhigin-ai-portfolio.onrender.com/chat' // ✅ Use permanent backend
+
   // 👂 Close on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -20,7 +22,7 @@ const Chatbot = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // 📡 Send message to backend
+  // 📡 Send message to Gemini backend
   const handleSend = async () => {
     if (!input.trim()) return
 
@@ -30,27 +32,26 @@ const Chatbot = () => {
     setError(false)
 
     try {
-      const response = await fetch("https://0e78ea5f148c.ngrok-free.app/chat", {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'ngrok-skip-browser-warning': 'true'
-  },
-  body: JSON.stringify({ message: input }),
+      const response = await fetch(BACKEND_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ message: input })
       })
 
       const data = await response.json()
-      console.log("🤖 Ollama RAG Server replied:", data)
+      console.log('🤖 Gemini RAG replied:', data)
 
       setMessages((prev) => [...prev, {
         sender: 'bot',
-        text: data.reply || '🤖 Ollama didn’t reply anything.'
+        text: data.reply || '🤖 Gemini didn’t reply anything.'
       }])
     } catch (err) {
-      console.error("❌ Ollama API error in frontend:", err)
+      console.error('❌ Gemini API error in frontend:', err)
       setMessages((prev) => [...prev, {
         sender: 'bot',
-        text: '❌ Ollama API error. Try again.'
+        text: '❌ Gemini API error. Try again.'
       }])
       setError(true)
     } finally {
@@ -105,7 +106,7 @@ const Chatbot = () => {
               ))}
               {loading && (
                 <div className="text-left text-xs text-purple-400 animate-pulse">
-                  Ollama is thinking...
+                  Gemini is thinking...
                 </div>
               )}
             </div>

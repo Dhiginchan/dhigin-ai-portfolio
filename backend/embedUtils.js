@@ -1,33 +1,22 @@
 import fs from 'fs'
-import axios from 'axios'
-import cosineSimilarityPkg from 'cosine-similarity'
 import dotenv from 'dotenv'
+import { GoogleGenerativeAI } from '@google/generative-ai'
+import cosineSimilarityPkg from 'cosine-similarity'
 
 dotenv.config()
 
-const OLLAMA_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+const embedModel = genAI.getGenerativeModel({ model: 'models/embedding-001' })
 const cosineSimilarity = cosineSimilarityPkg
 
 export async function embed(text) {
-  try {
-    const response = await axios.post(`${OLLAMA_URL}/api/embeddings`, {
-      model: 'nomic-embed-text',
-      prompt: text
-    }, {
-      headers: {
-        'ngrok-skip-browser-warning': 'true'
-      }
-    })
+  const result = await embedModel.embedContent({
+    content: { parts: [{ text }] },
+    taskType: 'retrieval_document',
+    title: 'portfolio_chunk',
+  })
 
-    if (!response.data || !response.data.embedding) {
-      throw new Error('Invalid embedding response')
-    }
-
-    return response.data.embedding
-  } catch (err) {
-    console.error('❌ Embed error:', err.message)
-    throw err
-  }
+  return result.embedding.values
 }
 
 export async function buildVectorDB() {
@@ -46,10 +35,9 @@ export async function buildVectorDB() {
 }
 
 export function getSimilarChunks(queryVec, allChunks, topN = 3) {
-  const scored = allChunks.map((item) => ({
+  const scored = allChunks.map(item => ({
     ...item,
-    score: cosineSimilarity(queryVec, item.embedding),
+    score: cosineSimilarity(queryVec, item.embedding)
   }))
-
   return scored.sort((a, b) => b.score - a.score).slice(0, topN)
 }
