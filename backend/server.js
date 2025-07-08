@@ -12,93 +12,89 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
-const cosineSimilarity = cosineSimilarityPkg
-const vectorDB = JSON.parse(fs.readFileSync('./data/vector_db.json', 'utf8'))
-
-// 🧠 Connect to Ollama Mistral endpoint
+// ✅ Ollama endpoint config
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434'
 const MODEL = process.env.OLLAMA_MODEL || 'mistral'
 
-// 🔍 Vector similarity search
+const cosineSimilarity = cosineSimilarityPkg
+const vectorDB = JSON.parse(fs.readFileSync('./data/vector_db.json', 'utf8'))
+
+// 🔍 Vector search using cosine similarity
 async function retrieveRelevantChunks(userQuery, topN = 3) {
   const queryVec = await embed(userQuery)
-  const scored = vectorDB.map(item => ({
+  const scored = vectorDB.map((item) => ({
     ...item,
     score: cosineSimilarity(queryVec, item.embedding),
   }))
   return scored.sort((a, b) => b.score - a.score).slice(0, topN)
 }
 
-// 💬 Chat endpoint
+// 🤖 Chat endpoint
 app.post('/chat', async (req, res) => {
   try {
     const { message } = req.body
     const lower = message.toLowerCase()
 
-    // 🤝 Casual replies
-    const greetings = ['hi', 'hello', 'hey', 'how are you', 'what’s up']
-    if (greetings.some(g => lower.includes(g))) {
-      return res.json({ reply: `Hey there! I'm Dhigin's AI assistant. Ask me anything! 🚀` })
+    // 👋 Friendly greeting shortcut
+    const greetings = ['hi', 'hello', 'hey', 'how are you', 'yo']
+    if (greetings.some((g) => lower.includes(g))) {
+      return res.json({
+        reply: "Hey there! I'm Dhigin's AI assistant. Ask me anything! 🚀",
+      })
     }
 
-    // 📚 Context retrieval
+    // 🔍 Build RAG context
     let context = ''
-    const isProjectQuery = ['project', 'built', 'developed', 'created', 'system'].some(w =>
-      lower.includes(w)
-    )
+    const keywords = ['project', 'built', 'developed', 'created', 'system']
+    const isProjectQuery = keywords.some((word) => lower.includes(word))
 
     if (isProjectQuery) {
       const all = JSON.parse(fs.readFileSync('./data/portfolio.json', 'utf8'))
-      const projectChunks = all.filter(t =>
-        ['project', 'built', 'developed', 'created', 'system'].some(word =>
-          t.toLowerCase().includes(word)
-        )
+      const filtered = all.filter((t) =>
+        keywords.some((w) => t.toLowerCase().includes(w))
       )
-      context = projectChunks.join('\n\n')
+      context = filtered.join('\n\n')
     } else {
       const topChunks = await retrieveRelevantChunks(message)
-      context = topChunks.map(c => c.text).join('\n\n')
+      context = topChunks.map((c) => c.text).join('\n\n')
     }
 
+    // 💡 Final prompt
     const prompt = `
-You are Dhigin's personal AI portfolio assistant.
+You are Dhigin's AI assistant.
 
-Use the following context to answer the user's question clearly and informatively.
-Even if the exact answer is not in the context, respond with the most relevant info.
+Use the context below to answer the user's question. If it asks about projects, structure replies like this:
 
-If the user asks about projects, format the answer like:
+**Project Title:** Short description.
 
-**Project Title:** Short description here.
-
-Leave two line breaks between each.
+Add two line breaks between each project.
 
 ---
 Context:
 ${context}
 ---
-User's question: ${message}
+User's Question: ${message}
+`.trim()
 
-Answer:
-`
-
+    // 🔁 Call Ollama
     const response = await axios.post(`${OLLAMA_URL}/api/generate`, {
       model: MODEL,
       prompt: prompt,
       stream: false,
     })
 
-    const reply = response.data?.response?.trim()
-    console.log('📩 User:', message)
-    console.log('📚 Context:', context)
-    console.log('🤖 Ollama reply:', reply)
+    console.log('🧠 RAW Ollama Response:', response.data)
 
-    res.json({ reply: reply || "🤖 No response from Ollama." })
+    const reply = response.data?.response?.trim() || "🤖 Ollama didn’t reply."
+
+    res.json({ reply })
   } catch (err) {
-    console.error('❌ Ollama backend error:', err.message)
-    res.status(500).json({ error: '❌ Ollama API error. Try again.' })
+    console.error('❌ Ollama backend error:', err.message || err)
+    res.status(500).json({ error: 'Ollama API error. Try again.' })
   }
 })
 
+// 🚀 Start server
 app.listen(3001, () => {
   console.log('🧠 Ollama RAG backend running at http://localhost:3001')
 })
