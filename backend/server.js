@@ -11,10 +11,16 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
+// ✅ Health check endpoint for UptimeRobot
+app.get('/ping', (req, res) => {
+  res.status(200).send('✅ Gemini RAG is awake!')
+})
+
+// ⚙️ Gemini setup
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 const chatModel = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || 'gemini-1.5-flash' })
 
-// Load vector DB
+// 📚 Load vector DB
 let vectorDB = []
 try {
   vectorDB = JSON.parse(fs.readFileSync('./data/vector_db.json', 'utf8'))
@@ -22,25 +28,25 @@ try {
   console.warn('⚠️ vector_db.json not found. Run buildVectorDB() first.')
 }
 
-// Vector similarity search
+// 🔍 Vector search
 async function retrieveRelevantChunks(userQuery, topN = 3) {
   const queryVec = await embed(userQuery)
   return getSimilarChunks(queryVec, vectorDB, topN)
 }
 
-// Main chat route
+// 🤖 Main chat route
 app.post('/chat', async (req, res) => {
   try {
     const { message } = req.body
     const lower = message.toLowerCase()
 
-    // Friendly quick reply
+    // 💬 Friendly replies
     const greetings = ['hi', 'hello', 'hey', 'how are you', 'yo']
     if (greetings.some(g => lower.includes(g))) {
       return res.json({ reply: "Hey there! I'm Dhigin's AI assistant. Ask me anything! 🚀" })
     }
 
-    // Get context
+    // 🧠 Build context
     let context = ''
     const keywords = ['project', 'built', 'developed', 'created', 'system']
     const isProjectQuery = keywords.some(word => lower.includes(word))
@@ -83,6 +89,7 @@ User's Question: ${message}
   }
 })
 
+// 🚀 Launch server
 app.listen(3001, () => {
   console.log('🧠 Gemini RAG backend running at http://localhost:3001')
 })
