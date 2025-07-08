@@ -13,7 +13,7 @@ app.use(cors())
 app.use(express.json())
 
 // ✅ Ollama endpoint config
-const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
+const OLLAMA_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
 const MODEL = process.env.OLLAMA_MODEL || 'mistral'
 
 const cosineSimilarity = cosineSimilarityPkg
