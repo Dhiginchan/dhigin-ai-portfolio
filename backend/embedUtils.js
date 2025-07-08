@@ -8,7 +8,7 @@ const cosineSimilarity = cosineSimilarityPkg
  * Generate embedding using Ollama
  */
 export async function embed(text) {
-  const response = await axios.post('http://localhost:11434/api/embeddings', {
+  await axios.post(`${process.env.OLLAMA_BASE_URL}/api/embeddings`, {
     model: 'nomic-embed-text',
     prompt: text
   })
