@@ -11,9 +11,6 @@ const Chatbot = () => {
   const [error, setError] = useState(false)
   const chatRef = useRef()
 
-  const BACKEND_URL = 'https://dhigin-ai-portfolio.onrender.com/chat' // ✅ Use permanent backend
-
-  // 👂 Close on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (chatRef.current && !chatRef.current.contains(e.target)) setOpen(false)
@@ -22,33 +19,30 @@ const Chatbot = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // 📡 Send message to Gemini backend
   const handleSend = async () => {
     if (!input.trim()) return
-
     setMessages((prev) => [...prev, { sender: 'user', text: input }])
     setInput('')
     setLoading(true)
     setError(false)
 
     try {
-      const response = await fetch(BACKEND_URL, {
+      const response = await fetch('https://your-backend-url/chat', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
         },
-        body: JSON.stringify({ message: input })
+        body: JSON.stringify({ message: input }),
       })
 
       const data = await response.json()
-      console.log('🤖 Gemini RAG replied:', data)
-
       setMessages((prev) => [...prev, {
         sender: 'bot',
         text: data.reply || '🤖 Gemini didn’t reply anything.'
       }])
     } catch (err) {
-      console.error('❌ Gemini API error in frontend:', err)
+      console.error("❌ API Error:", err)
       setMessages((prev) => [...prev, {
         sender: 'bot',
         text: '❌ Gemini API error. Try again.'
@@ -63,66 +57,56 @@ const Chatbot = () => {
 
   return (
     <>
-      {/* 💬 Floating Avatar */}
-      <div
-        className="fixed bottom-5 right-5 z-50 cursor-pointer flex items-center gap-2 bg-purple-700 hover:bg-purple-800 text-white px-4 py-2 rounded-full shadow-xl"
+      {/* ✨ Floating Avatar Button */}
+      <motion.div
+        className="fixed bottom-6 right-6 z-50 cursor-pointer bg-gradient-to-r from-purple-700 to-pink-500 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 hover:scale-105 transition-transform"
         onClick={() => setOpen(!open)}
       >
         <BotAvatar mood={currentMood} />
-        {!open && <span className="text-sm hidden md:inline ml-2">How can I help you?</span>}
-      </div>
+        {!open && <span className="hidden md:inline text-sm">Ask me anything</span>}
+      </motion.div>
 
-      {/* 💬 Chat Window */}
+      {/* 🧠 Chat Modal */}
       <AnimatePresence>
         {open && (
           <motion.div
             ref={chatRef}
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
+            exit={{ opacity: 0, y: 40 }}
             transition={{ duration: 0.3 }}
-            className="fixed bottom-20 right-5 w-80 max-h-[75vh] bg-zinc-900 text-white p-4 rounded-xl shadow-2xl z-[999] flex flex-col"
+            className="fixed bottom-24 right-6 w-[22rem] max-h-[70vh] bg-zinc-900/80 backdrop-blur-md border border-zinc-700 rounded-2xl p-4 shadow-2xl z-[999] flex flex-col"
           >
-            <button
-              onClick={() => setOpen(false)}
-              className="absolute top-2 right-2 text-white hover:text-red-500"
-            >
+            <button onClick={() => setOpen(false)} className="absolute top-3 right-3 text-white hover:text-red-400">
               <X size={18} />
             </button>
 
-            <div className="overflow-y-auto flex-1 space-y-2 mb-2 text-sm pr-1 mt-6">
+            <div className="overflow-y-auto flex-1 pr-2 text-sm mt-6 space-y-2">
               {messages.map((m, i) => (
-                <div key={i} className={`${m.sender === 'user' ? 'text-right' : 'text-left'}`}>
-                  <span
-                    className={`inline-block px-3 py-2 rounded-lg whitespace-pre-wrap ${
-                      m.sender === 'user'
-                        ? 'bg-purple-700 text-white'
-                        : 'bg-zinc-800 text-purple-300'
-                    }`}
-                  >
+                <div key={i} className={`text-${m.sender === 'user' ? 'right' : 'left'}`}>
+                  <span className={`inline-block px-3 py-2 rounded-lg ${
+                    m.sender === 'user'
+                      ? 'bg-gradient-to-r from-purple-700 to-pink-500 text-white'
+                      : 'bg-zinc-800 text-purple-300'
+                  }`}>
                     {m.text}
                   </span>
                 </div>
               ))}
               {loading && (
-                <div className="text-left text-xs text-purple-400 animate-pulse">
-                  Gemini is thinking...
-                </div>
+                <div className="text-purple-400 text-xs animate-pulse">Gemini is thinking...</div>
               )}
             </div>
 
-            <div className="flex gap-2 mt-1">
+            <div className="mt-2 flex gap-2">
               <input
-                className="flex-1 p-2 text-black rounded focus:outline-none"
+                className="flex-1 px-3 py-2 rounded-lg text-black focus:outline-none"
+                placeholder="Type your message..."
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="Ask me anything..."
               />
-              <button
-                onClick={handleSend}
-                className="bg-purple-700 px-3 py-1 text-sm rounded hover:bg-purple-800 transition-all"
-              >
+              <button onClick={handleSend} className="bg-purple-700 hover:bg-purple-800 text-white text-sm px-4 py-2 rounded-lg">
                 Send
               </button>
             </div>
