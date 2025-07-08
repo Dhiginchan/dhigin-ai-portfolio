@@ -1,8 +1,8 @@
 import express from 'express'
 import cors from 'cors'
-import dotenv from 'dotenv'
 import fs from 'fs'
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import dotenv from 'dotenv'
+import axios from 'axios'
 import cosineSimilarityPkg from 'cosine-similarity'
 import { embed } from './embedUtils.js'
 
@@ -12,14 +12,18 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-const chatModel = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL })
 const cosineSimilarity = cosineSimilarityPkg
-
-// Load vector DB
 const vectorDB = JSON.parse(fs.readFileSync('./data/vector_db.json', 'utf8'))
 
-// 🔍 RAG: Vector similarity search
+async function queryOllama(prompt) {
+  const response = await axios.post('http://localhost:11434/api/generate', {
+    model: 'mistral', // or whatever model you pulled
+    prompt: prompt,
+    stream: false
+  })
+  return response.data.response
+}
+
 async function retrieveRelevantChunks(userQuery, topN = 3) {
   const queryVec = await embed(userQuery)
   const scored = vectorDB.map(item => ({
@@ -29,74 +33,59 @@ async function retrieveRelevantChunks(userQuery, topN = 3) {
   return scored.sort((a, b) => b.score - a.score).slice(0, topN)
 }
 
-// 💬 Chat endpoint
 app.post('/chat', async (req, res) => {
   try {
     const { message } = req.body
     const lower = message.toLowerCase()
 
-    // 🤝 Handle casual greetings directly
-    const greetings = ['hi', 'hello', 'hey', 'how are you', 'what’s up']
+    const greetings = ['hi', 'hello', 'hey', 'how are you']
     if (greetings.some(g => lower.includes(g))) {
-      const prompt = `You're Dhigin's friendly AI assistant. Respond casually to: "${message}"`
-      const result = await chatModel.generateContent(prompt)
-      return res.json({ reply: result.response.text() })
+      const reply = await queryOllama(`Greet the user casually. User said: "${message}"`)
+      return res.json({ reply })
     }
 
-    // 📁 Use RAG if it's a portfolio query
     let context = ''
-    const projectQuery = ['project', 'built', 'developed', 'created', 'system'].some(word =>
-      lower.includes(word)
+    const isProjectQuery = ['project', 'built', 'developed', 'system'].some(w =>
+      lower.includes(w)
     )
 
-    if (projectQuery) {
+    if (isProjectQuery) {
       const all = JSON.parse(fs.readFileSync('./data/portfolio.json', 'utf8'))
-      const projectChunks = all.filter(t =>
-        ['project', 'built', 'developed', 'created', 'system'].some(word =>
-          t.toLowerCase().includes(word)
+      const chunks = all.filter(t =>
+        ['project', 'built', 'developed', 'created', 'system'].some(w =>
+          t.toLowerCase().includes(w)
         )
       )
-      context = projectChunks.join('\n\n')
+      context = chunks.join('\n\n')
     } else {
       const topChunks = await retrieveRelevantChunks(message)
       context = topChunks.map(c => c.text).join('\n\n')
     }
 
-    // 🧠 Final prompt
     const prompt = `
-You are Dhigin's personal AI portfolio assistant.
+You are Dhigin's AI portfolio assistant.
 
-Use the context below to answer the user's question clearly and informatively. 
-Never say "I don't know." Respond with the best available info about Dhigin.
+Use the context below to answer the user's question as clearly and intelligently as possible.
 
-If the user asks about projects, format the answer like this:
-
-**Project Title:** Description here.
-
-(Include two line breaks between each.)
+If the user asks about projects, format like:
+**Project Title:** Description
 
 ---
 Context:
 ${context}
 ---
-User's question: ${message}
+User: ${message}
+Answer:
 `
 
-    const result = await chatModel.generateContent(prompt)
-    const reply = result.response.text()
-
-    console.log('🔍 User:', message)
-    console.log('📚 Context:', context)
-    console.log('🤖 Gemini reply:', reply)
-
+    const reply = await queryOllama(prompt)
     res.json({ reply })
   } catch (err) {
-    console.error('❌ Gemini-RAG ERROR:', err)
-    res.status(500).json({ error: 'Gemini RAG backend failed.' })
+    console.error('❌ Ollama ERROR:', err.message)
+    res.status(500).json({ error: 'Ollama backend failed.' })
   }
 })
 
-// ✅ Start server
 app.listen(3001, () => {
-  console.log('🧠 Gemini RAG backend running at http://localhost:3001')
+  console.log('🧠 Ollama backend running at http://localhost:3001')
 })
