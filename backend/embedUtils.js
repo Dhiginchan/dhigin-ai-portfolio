@@ -1,25 +1,19 @@
 import fs from 'fs'
-import dotenv from 'dotenv'
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import axios from 'axios'
 import cosineSimilarityPkg from 'cosine-similarity'
 
 const cosineSimilarity = cosineSimilarityPkg
-dotenv.config()
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-const embedModel = genAI.getGenerativeModel({ model: 'models/embedding-001' })
 
 /**
- * Generate embedding for a single chunk of text
+ * Generate embedding using Ollama
  */
 export async function embed(text) {
-  const result = await embedModel.embedContent({
-    content: text,
-    taskType: 'retrieval_document',
-    title: 'resume_chunk',
+  const response = await axios.post('http://localhost:11434/api/embeddings', {
+    model: 'nomic-embed-text',
+    prompt: text
   })
 
-  return result.embedding.values
+  return response.data.embedding
 }
 
 /**
