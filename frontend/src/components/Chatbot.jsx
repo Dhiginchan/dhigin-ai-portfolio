@@ -34,18 +34,18 @@ const Chatbot = () => {
         body: JSON.stringify({ message: input }),
       })
 
-      const data = await response.json() // ✅ fixed here
-      console.log("🌐 Gemini RAG Server replied:", data)
+      const data = await response.json()
+      console.log("🤖 Ollama RAG Server replied:", data)
 
       setMessages((prev) => [...prev, {
         sender: 'bot',
-        text: data.reply || '🤖 Gemini didn’t reply anything.'
+        text: data.reply || '🤖 Ollama didn’t reply anything.'
       }])
     } catch (err) {
-      console.error("❌ Gemini API error in frontend:", err)
+      console.error("❌ Ollama API error in frontend:", err)
       setMessages((prev) => [...prev, {
         sender: 'bot',
-        text: '❌ Gemini API error.'
+        text: '❌ Ollama API error. Try again.'
       }])
       setError(true)
     } finally {
@@ -100,7 +100,7 @@ const Chatbot = () => {
               ))}
               {loading && (
                 <div className="text-left text-xs text-purple-400 animate-pulse">
-                  Gemini is thinking...
+                  Ollama is thinking...
                 </div>
               )}
             </div>
