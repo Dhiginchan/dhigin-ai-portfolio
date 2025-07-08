@@ -1,27 +1,26 @@
 import fs from 'fs'
 import axios from 'axios'
-import dotenv from 'dotenv'
 import cosineSimilarityPkg from 'cosine-similarity'
+import dotenv from 'dotenv'
 
 dotenv.config()
 
+const OLLAMA_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
 const cosineSimilarity = cosineSimilarityPkg
 
-/**
- * Generate embedding using Ollama
- */
 export async function embed(text) {
-  const response = await axios.post(`${process.env.OLLAMA_BASE_URL}/api/embeddings`, {
+  const response = await axios.post(`${OLLAMA_URL}/api/embeddings`, {
     model: 'nomic-embed-text',
     prompt: text
+  }, {
+    headers: {
+      'ngrok-skip-browser-warning': 'true'
+    }
   })
 
-  return response.data.embedding // ✅ FIXED: was missing return value
+  return response.data.embedding
 }
 
-/**
- * Build the vector DB from portfolio.json
- */
 export async function buildVectorDB() {
   const raw = fs.readFileSync('./data/portfolio.json', 'utf8')
   const docs = JSON.parse(raw)
@@ -37,9 +36,6 @@ export async function buildVectorDB() {
   console.log('✅ Vector DB built and saved.')
 }
 
-/**
- * Perform cosine similarity search
- */
 export function getSimilarChunks(queryVec, allChunks, topN = 3) {
   const scored = allChunks.map((item) => ({
     ...item,
