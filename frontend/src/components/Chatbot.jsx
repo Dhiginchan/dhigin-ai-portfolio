@@ -30,13 +30,13 @@ const Chatbot = () => {
     setError(false)
 
     try {
-      const response = await fetch("https://cbc4dcb76710.ngrok-free.app", {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true'
-        },
-        body: JSON.stringify({ message: input }),
+      const response = await fetch("https://f45a9c28165c.ngrok-free.app/chat", {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true'
+  },
+  body: JSON.stringify({ message: input }),
       })
 
       const data = await response.json()
