@@ -30,7 +30,7 @@ const Chatbot = () => {
     setError(false)
 
     try {
-      const response = await fetch("https://f45a9c28165c.ngrok-free.app/chat", {
+      const response = await fetch("https://0e78ea5f148c.ngrok-free.app/chat", {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
