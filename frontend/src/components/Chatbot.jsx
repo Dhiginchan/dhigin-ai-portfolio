@@ -11,6 +11,7 @@ const Chatbot = () => {
   const [error, setError] = useState(false)
   const chatRef = useRef()
 
+  // 👂 Close on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (chatRef.current && !chatRef.current.contains(e.target)) setOpen(false)
@@ -19,6 +20,7 @@ const Chatbot = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  // 📡 Send message to backend
   const handleSend = async () => {
     if (!input.trim()) return
 
@@ -28,9 +30,12 @@ const Chatbot = () => {
     setError(false)
 
     try {
-      const response = await fetch("https://dhigin-ai-portfolio.onrender.com/chat", {
+      const response = await fetch("https://1e9ff413ae74.ngrok-free.app/chat", {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
+        },
         body: JSON.stringify({ message: input }),
       })
 
@@ -57,7 +62,7 @@ const Chatbot = () => {
 
   return (
     <>
-      {/* 🧠 Floating avatar button */}
+      {/* 💬 Floating Avatar */}
       <div
         className="fixed bottom-5 right-5 z-50 cursor-pointer flex items-center gap-2 bg-purple-700 hover:bg-purple-800 text-white px-4 py-2 rounded-full shadow-xl"
         onClick={() => setOpen(!open)}
@@ -66,7 +71,7 @@ const Chatbot = () => {
         {!open && <span className="text-sm hidden md:inline ml-2">How can I help you?</span>}
       </div>
 
-      {/* 💬 Chatbox */}
+      {/* 💬 Chat Window */}
       <AnimatePresence>
         {open && (
           <motion.div
