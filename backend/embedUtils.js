@@ -1,6 +1,9 @@
 import fs from 'fs'
 import axios from 'axios'
+import dotenv from 'dotenv'
 import cosineSimilarityPkg from 'cosine-similarity'
+
+dotenv.config()
 
 const cosineSimilarity = cosineSimilarityPkg
 
@@ -8,12 +11,12 @@ const cosineSimilarity = cosineSimilarityPkg
  * Generate embedding using Ollama
  */
 export async function embed(text) {
-  await axios.post(`${process.env.OLLAMA_BASE_URL}/api/embeddings`, {
+  const response = await axios.post(`${process.env.OLLAMA_BASE_URL}/api/embeddings`, {
     model: 'nomic-embed-text',
     prompt: text
   })
 
-  return response.data.embedding
+  return response.data.embedding // ✅ FIXED: was missing return value
 }
 
 /**
