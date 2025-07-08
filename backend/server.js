@@ -77,6 +77,8 @@ User's Question: ${message}
 `.trim()
 
     // 🔁 Call Ollama
+    console.log("🔁 Sending to Ollama URL:", `${OLLAMA_BASE_URL}/api/generate`)
+
     const response = await axios.post(`${OLLAMA_BASE_URL}/api/generate`, {
       model: MODEL,
       prompt: prompt,
