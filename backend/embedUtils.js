@@ -9,16 +9,25 @@ const OLLAMA_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
 const cosineSimilarity = cosineSimilarityPkg
 
 export async function embed(text) {
-  const response = await axios.post(`${OLLAMA_URL}/api/embeddings`, {
-    model: 'nomic-embed-text',
-    prompt: text
-  }, {
-    headers: {
-      'ngrok-skip-browser-warning': 'true'
-    }
-  })
+  try {
+    const response = await axios.post(`${OLLAMA_URL}/api/embeddings`, {
+      model: 'nomic-embed-text',
+      prompt: text
+    }, {
+      headers: {
+        'ngrok-skip-browser-warning': 'true'
+      }
+    })
 
-  return response.data.embedding
+    if (!response.data || !response.data.embedding) {
+      throw new Error('Invalid embedding response')
+    }
+
+    return response.data.embedding
+  } catch (err) {
+    console.error('❌ Embed error:', err.message)
+    throw err
+  }
 }
 
 export async function buildVectorDB() {

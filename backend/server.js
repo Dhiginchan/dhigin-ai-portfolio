@@ -12,10 +12,18 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
-const OLLAMA_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
+const OLLAMA_URL = process.env.OLLAMA_BASE_URL?.trim() || 'http://localhost:11434'
 const MODEL = process.env.OLLAMA_MODEL || 'mistral'
 const cosineSimilarity = cosineSimilarityPkg
-const vectorDB = JSON.parse(fs.readFileSync('./data/vector_db.json', 'utf8'))
+
+let vectorDB = []
+
+// 📦 Load vector DB once
+try {
+  vectorDB = JSON.parse(fs.readFileSync('./data/vector_db.json', 'utf8'))
+} catch (err) {
+  console.error('❌ Failed to load vector DB:', err.message)
+}
 
 async function retrieveRelevantChunks(userQuery, topN = 3) {
   const queryVec = await embed(userQuery)
@@ -29,8 +37,9 @@ async function retrieveRelevantChunks(userQuery, topN = 3) {
 app.post('/chat', async (req, res) => {
   try {
     const { message } = req.body
-    const lower = message.toLowerCase()
+    if (!message) return res.status(400).json({ error: 'Message is required' })
 
+    const lower = message.toLowerCase()
     const greetings = ['hi', 'hello', 'hey', 'how are you', 'yo']
     if (greetings.some((g) => lower.includes(g))) {
       return res.json({
@@ -38,6 +47,7 @@ app.post('/chat', async (req, res) => {
       })
     }
 
+    // 🔍 Context generation
     let context = ''
     const keywords = ['project', 'built', 'developed', 'created', 'system']
     const isProjectQuery = keywords.some((word) => lower.includes(word))
@@ -53,6 +63,7 @@ app.post('/chat', async (req, res) => {
       context = topChunks.map((c) => c.text).join('\n\n')
     }
 
+    // ✏️ Final prompt
     const prompt = `
 You are Dhigin's AI assistant.
 
@@ -70,12 +81,14 @@ User's Question: ${message}
 `.trim()
 
     console.log("🔁 Sending to Ollama:", `${OLLAMA_URL}/api/generate`)
+
     const response = await axios.post(`${OLLAMA_URL}/api/generate`, {
       model: MODEL,
       prompt: prompt,
       stream: false
     }, {
       headers: {
+        'Content-Type': 'application/json',
         'ngrok-skip-browser-warning': 'true'
       }
     })
@@ -85,7 +98,8 @@ User's Question: ${message}
 
   } catch (err) {
     console.error('❌ Ollama backend error:', err.message || err)
-    res.status(500).json({ error: 'Ollama API error. Try again.' })
+    const code = err?.response?.status || 500
+    res.status(code).json({ error: 'Ollama API error. Try again.' })
   }
 })
 
