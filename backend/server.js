@@ -43,7 +43,7 @@ app.post('/chat', async (req, res) => {
     // 💬 Friendly replies
     const greetings = ['hi', 'hello', 'hey', 'how are you', 'yo']
     if (greetings.some(g => lower.includes(g))) {
-      return res.json({ reply: "Hey there! I'm Dhigin's AI assistant. Ask me anything! 🚀" })
+      return res.json({ reply: "Hey there! I'm Dhigin's AI assistant. Ask me anything About him! 🚀" })
     }
 
     // 🧠 Build context
