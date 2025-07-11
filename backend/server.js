@@ -11,7 +11,7 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
-// ✅ Health check endpoint for UptimeRobot
+// ✅ Health check endpoint
 app.get('/ping', (req, res) => {
   res.status(200).send('✅ Gemini RAG is awake!')
 })
@@ -40,11 +40,10 @@ app.post('/chat', async (req, res) => {
     const { message } = req.body
     const lower = message.toLowerCase()
 
-    // 💬 Friendly replies
+    // 💬 Friendly intro injection (but never stop real answer)
     const greetings = ['hi', 'hello', 'hey', 'how are you', 'yo']
-    if (greetings.some(g => lower.includes(g))) {
-      return res.json({ reply: "Hey there! I'm Dhigin's AI assistant. Ask me anything About him! 🚀" })
-    }
+    const hasGreeting = greetings.some(g => lower.includes(g))
+    const greetingReply = hasGreeting ? "Hey there! I'm Dhigin's AI assistant. 😊 Here's what I found:\n\n" : ''
 
     // 🧠 Build context
     let context = ''
@@ -63,23 +62,25 @@ app.post('/chat', async (req, res) => {
     }
 
     const prompt = `
-You are Dhigin's AI portfolio assistant.
+You are Dhigin's AI portfolio assistant, designed to answer any questions about him with clarity and professionalism.
 
-Use the context below to answer the user's question. If it's about projects, format the response like:
+If the user asks about Dhigin's projects, respond in this format:
 
 **Project Title:** Description.
 
-Add two line breaks between each project.
+Separate each project with two line breaks.
+
+Otherwise, answer in a confident, informative tone. If you don't know something, say so clearly and politely.
 
 ---
 Context:
 ${context}
 ---
 User's Question: ${message}
-`.trim()
+    `.trim()
 
     const result = await chatModel.generateContent(prompt)
-    const reply = result.response.text()
+    const reply = greetingReply + result.response.text()
 
     console.log('🧠 Gemini RAG replied:', reply)
     res.json({ reply })
