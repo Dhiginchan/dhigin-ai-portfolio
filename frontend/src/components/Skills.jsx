@@ -12,7 +12,6 @@ const skills = [
   { name: "OpenAI API", icon: <SiOpenai size={30} /> },
   { name: "n8n", icon: "🟠" },
   { name: "GitHub", icon: <SiGithub size={30} /> },
-  { name: "Vite", icon: <SiVite size={30} /> },
 ]
 
 const Skills = () => {
